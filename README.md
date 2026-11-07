@@ -1,26 +1,15 @@
 # C'est nul ! — extension Arc
 
-Petite extension Chromium/Arc qui joue le son de Homer Simpson lorsque les touches **N**, **U** et **L** sont maintenues simultanément.
+Maintiens **N + U + L** simultanément pour jouer le son de Homer. Aucun popup, fenêtre, onglet ou notification n'est ouvert.
 
-## Installation dans Arc
+## Installer dans Arc
+1. Télécharge et décompresse le ZIP.
+2. Ouvre `arc://extensions`.
+3. Active **Developer mode**.
+4. Clique sur **Load unpacked** et sélectionne le dossier qui contient directement `manifest.json`.
+5. Dans les détails de l'extension, règle **Site access** sur **On all sites**. C'est nécessaire pour écouter le raccourci sur les pages web.
+6. Recharge les onglets déjà ouverts après l'installation.
 
-1. Ouvre le dépôt GitHub et clique sur **Code → Download ZIP**.
-2. Décompresse le ZIP dans un dossier.
-3. Dans Arc, ouvre `arc://extensions` (ou `chrome://extensions`).
-4. Active **Developer mode**.
-5. Clique sur **Load unpacked** et sélectionne le dossier décompressé, celui qui contient directement `manifest.json`.
+Le son est embarqué localement dans l'extension. L'extension n'utilise aucun service réseau et ne modifie pas Intégrales — YouTube Focus.
 
-## Utilisation
-
-Maintiens **N + U + L** en même temps : le son se lance, sans popup, fenêtre, notification ni changement d'onglet.
-
-Le raccourci est écouté dans les pages web ordinaires, y compris YouTube. Il utilise le MP3 embarqué dans l'extension : il ne dépend pas des requêtes vidéo YouTube.
-
-## Compatibilité et confidentialité
-
-- Manifest V3, sans service worker, sans réseau et sans stockage.
-- Le son est servi localement depuis l'extension.
-- L'extension demande l'accès aux pages web pour écouter le raccourci dans les onglets. Elle n'envoie aucune donnée.
-- Comme toute extension Chromium, elle ne peut pas s'exécuter sur certaines pages internes du navigateur (par exemple `arc://`, `chrome://`) ni dans les pages protégées du navigateur.
-
-L'extension **Intégrales — YouTube Focus** n'a pas besoin d'être modifiée : son blocage cible les médias YouTube servis depuis `googlevideo.com`, tandis que ce son est un fichier local de cette extension.
+Les pages internes du navigateur (`arc://`, `chrome://`) et les pages protégées ne permettent pas l'injection de scripts.
