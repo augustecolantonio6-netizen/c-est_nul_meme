@@ -3,7 +3,12 @@
 let creatingOffscreenDocument;
 
 async function ensureOffscreenDocument() {
-  if (await chrome.offscreen.hasDocument()) return;
+  const offscreenUrl = chrome.runtime.getURL("offscreen.html");
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: ["OFFSCREEN_DOCUMENT"],
+    documentUrls: [offscreenUrl]
+  });
+  if (contexts.length > 0) return;
 
   if (!creatingOffscreenDocument) {
     creatingOffscreenDocument = chrome.offscreen.createDocument({
