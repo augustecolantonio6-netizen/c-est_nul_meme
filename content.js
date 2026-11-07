@@ -1,74 +1,73 @@
 (() => {
   "use strict";
 
-  // The shortcut is deliberately handled in a content script so it works
-  // across ordinary web pages, including YouTube, without opening a window.
   const REQUIRED_KEYS = new Set(["n", "u", "l"]);
-  const pressedKeys = new Set();
-  let shortcutFired = false;
-  let sound = null;
+  const pressed = new Set();
+  let firedForThisPress = false;
 
-  function allKeysPressed() {
-    for (const key of REQUIRED_KEYS) {
-      if (!pressedKeys.has(key)) return false;
+  // The audio file is packaged with the extension. No YouTube request is used.
+  const audio = new Audio(chrome.runtime.getURL("assets/homer.mp3"));
+  audio.preload = "auto";
+  audio.volume = 1;
+
+  function normalizedKey(event) {
+    const key = String(event.key || "").toLowerCase();
+    if (REQUIRED_KEYS.has(key)) return key;
+
+    // Fallback for unusual keyboard layouts or missing event.key values.
+    const code = String(event.code || "");
+    if (code.startsWith("Key")) {
+      const fallback = code.slice(3).toLowerCase();
+      if (REQUIRED_KEYS.has(fallback)) return fallback;
     }
-    return true;
+    return "";
   }
 
-  function playSound() {
-    if (!sound) {
-      sound = new Audio(chrome.runtime.getURL("assets/homer.mp3"));
-      sound.preload = "auto";
-      sound.volume = 1;
-    }
-
-    // Restart cleanly if the user triggers the shortcut again quickly.
-    try {
-      sound.pause();
-      sound.currentTime = 0;
-    } catch {
-      // The audio element may not have finished loading yet.
-    }
-
-    const playback = sound.play();
-    if (playback && typeof playback.catch === "function") {
-      // Keep the extension completely silent if playback is unavailable.
-      playback.catch(() => {});
-    }
+  function reset() {
+    pressed.clear();
+    firedForThisPress = false;
   }
 
   function onKeyDown(event) {
     if (!event.isTrusted || event.isComposing) return;
 
-    const key = String(event.key || "").toLowerCase();
-    if (!REQUIRED_KEYS.has(key)) return;
+    const key = normalizedKey(event);
+    if (!key) return;
 
-    pressedKeys.add(key);
-    if (!shortcutFired && allKeysPressed()) {
-      shortcutFired = true;
-      playSound();
+    pressed.add(key);
+    if (pressed.size === REQUIRED_KEYS.size && !firedForThisPress) {
+      firedForThisPress = true;
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+      } catch (_) {
+        // The first playback can start before metadata has loaded.
+      }
+
+      const playback = audio.play();
+      if (playback && typeof playback.catch === "function") {
+        playback.catch((error) => {
+          // No UI or popup: leave a useful diagnostic in the page console.
+          console.warn("C'est nul ! : impossible de lire le son.", error);
+        });
+      }
     }
   }
 
   function onKeyUp(event) {
-    const key = String(event.key || "").toLowerCase();
-    if (!REQUIRED_KEYS.has(key)) return;
+    const key = normalizedKey(event);
+    if (!key) return;
 
-    pressedKeys.delete(key);
-    if (!allKeysPressed()) shortcutFired = false;
+    pressed.delete(key);
+    if (pressed.size < REQUIRED_KEYS.size) firedForThisPress = false;
   }
 
-  function resetKeys() {
-    pressedKeys.clear();
-    shortcutFired = false;
-  }
-
-  // Capture phase makes the shortcut reliable on pages with their own
-  // keyboard handlers. We do not cancel normal key events or page shortcuts.
-  document.addEventListener("keydown", onKeyDown, true);
-  document.addEventListener("keyup", onKeyUp, true);
-  window.addEventListener("blur", resetKeys, true);
+  // Window capture runs before page-level handlers; events are not cancelled.
+  window.addEventListener("keydown", onKeyDown, true);
+  window.addEventListener("keyup", onKeyUp, true);
+  window.addEventListener("blur", reset, true);
+  window.addEventListener("pagehide", reset, true);
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") resetKeys();
+    if (document.visibilityState !== "visible") reset();
   }, true);
 })();
